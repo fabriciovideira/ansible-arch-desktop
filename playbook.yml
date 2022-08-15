@@ -1,0 +1,36 @@
+---
+- name: Provision
+  hosts: 127.0.0.1,
+  connection: local
+  roles:
+    - role: eliseuvideira.archlinux_aur
+      vars:
+        archlinux_aur__packages:
+          - visual-studio-code-bin
+          - google-chrome
+          - azuredatastudio-bin
+          - brave-bin
+          - docker
+          - docker-compose
+          - anydesk-bin
+          - insomnia-bin
+          - libffi6
+          - nvm
+          - nodejs
+          - yarn
+          - oh-my-zsh-git
+          - zip
+          - zsh
+          - neovim
+          - vim
+          - deno
+          - ghc
+          - appimagelauncher
+          - git
+          - stow
+          - tmux
+          - cronie
+          - php7
+          - mpv
+          - shellcheck
+

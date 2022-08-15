@@ -1,0 +1,79 @@
+---
+- name: Check `paru` Installed
+  shell: |
+    #!/bin/sh
+    if which paru >/dev/null; then
+      echo "Installed"
+    else
+      echo "Not Installed"
+    fi
+  register: archlinux_aur_setup__check_paru_installed
+  changed_when: false
+
+- set_fact:
+    archlinux_aur_setup__is_paru_installed: '{{ archlinux_aur_setup__check_paru_installed.stdout == "Installed" }}'
+
+- name: Install AUR Helper
+  block:
+    - name: Install `paru`
+      block:
+        - name: Update and Upgrade `pacman` Packages
+          become: true
+          become_user: root
+          pacman:
+            update_cache: true
+            upgrade: true
+
+        - name: Install Required Packages with `pacman`
+          become: true
+          become_user: root
+          pacman:
+            name:
+              - base-devel
+              - git
+            state: present
+
+        - name: Create Directory `/opt/paru-bin`
+          become: true
+          become_user: root
+          file:
+            path: /opt/paru-bin
+            state: directory
+            owner: "{{ ansible_user_uid }}"
+            group: "{{ ansible_user_gid }}"
+            recurse: true
+
+        - name: Clone `paru` Repository
+          git:
+            repo: https://aur.archlinux.org/paru-bin.git
+            dest: /opt/paru-bin
+            update: false
+
+        - name: Install `paru` with `makepkg`
+          shell: |
+            #!/bin/sh
+            cd /opt/paru-bin
+            /usr/bin/makepkg -si --noconfirm
+
+      when: archlinux_aur_setup__is_paru_installed == false
+
+  when: archlinux_aur_setup__state == "present"
+
+- name: Uninstall AUR Helper
+  block:
+    - name: Uninstall `paru`
+      block:
+        - name: Uninstall `paru` with `paru`
+          shell: |
+            #!/bin/sh
+            paru -Rsn paru-bin --noconfirm
+
+        - name: Remove Directory `/opt/paru-bin`
+          become: true
+          become_user: root
+          file:
+            path: /opt/paru-bin
+            state: absent
+
+      when: archlinux_aur_setup__is_paru_installed == true
+  when: archlinux_aur_setup__state == "absent"

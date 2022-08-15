@@ -1,0 +1,10 @@
+galaxy_info:
+  role_name: archlinux_aur_setup
+  author: Eliseu Videira
+  description: Setup AUR Helper
+  license: MIT
+  min_ansible_version: 2.1
+  plataforms:
+    - name: archlinux
+  galaxy_tags: []
+dependencies: []

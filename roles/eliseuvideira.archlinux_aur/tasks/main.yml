@@ -1,0 +1,59 @@
+---
+- name: Install Packages
+  block:
+    - name: Upgrade Packages
+      block:
+        - name: Check Updates
+          shell: |
+            #!/bin/sh
+            /usr/bin/paru -Qu | wc -l
+          register: archlinux_aur__check_updates
+          changed_when: false
+          notify: Update Packages
+
+        - set_fact:
+            archlinux_aur__should_upgrade: archlinux_aur__check_updates.stdout != "0"
+
+        - name: Upgrade Packages
+          shell: |
+            #!/bin/sh
+            paru -Syu --noconfirm
+          when: archlinux_aur__should_upgrade == true
+
+      when: archlinux_aur__upgrade == true
+
+    - name: Check Missing Packages
+      shell: |
+        #!/bin/bash
+        comm -23 <(echo "{{ archlinux_aur__packages | join(' ') }}" | tr " " "\n" | sort) <(paru -Q | cut -d ' ' -f 1 | sort)
+      register: archlinux_aur__check_missing_packages
+      changed_when: false
+
+    - set_fact:
+        archlinux_aur__missing_packages: "{{ archlinux_aur__check_missing_packages.stdout_lines }}"
+
+    - name: Install Packages
+      shell: |
+        #!/bin/sh
+        paru -S $(echo "{{ archlinux_aur__missing_packages | join(' ') }}") --noconfirm
+      when: archlinux_aur__missing_packages | length != 0
+  when: archlinux_aur__state == "present"
+
+- name: Remove Packages
+  block:
+    - name: Check Existing Packages
+      shell: |
+        #!/bin/bash
+        comm -12 <(echo "{{ archlinux_aur__packages | join(' ') }}" | tr " " "\n" | sort) <(paru -Q | cut -d ' ' -f 1 | sort)
+      register: archlinux_aur__check_existing_packages
+      changed_when: false
+
+    - set_fact:
+        archlinux_aur__existing_packages: "{{ archlinux_aur__check_existing_packages.stdout_lines }}"
+
+    - name: Remove Packages
+      shell: |
+        #!/bin/sh
+        paru -Rsn $(echo "{{ archlinux_aur__existing_packages | join(' ') }}") --noconfirm
+      when: archlinux_aur__existing_packages | length != 0
+  when: archlinux_aur__state == "absent"

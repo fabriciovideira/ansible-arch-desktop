@@ -1,0 +1,3 @@
+---
+archlinux_aur__state: present
+archlinux_aur__upgrade: true
